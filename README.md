@@ -76,12 +76,13 @@ image on success. To inspect artifacts after a run, comment out the
 
 ## Design notes
 
-- Each build runs in an isolated task (the `builder-agent`), using BuildKit under the hood. Eventually, this should probably move to fully isolated Firecracker microVMs (fast cold-boot) that get spun up per-build.
+- Each build runs in an ECS task (the `builder-agent`) that spawns build processes using BuildKit under the hood. Eventually, this should probably move to a single orchestrator + fully isolated Firecracker microVMs (fast cold-boot) that get spun up per-build.
 - Build jobs are queued + scheduled. A separate scheduler service assigns build jobs to available `builder-agent` tasks.
 - Currently, each `builder-agent` task can spawn at most 1 build subprocess at a time. We could do some horizontal scaling here (1 microVM builder per CPU core) so each `builer-agent` task actually manages it's own pool of builder slots.
 - Currently, the "builder fleet" is a single task — would obviously scale up, but it works as a "single-build-queue-consumer" PoC.
 - `builder-agent` writes back to the API (for e.g. streaming log chunks, build status updates, etc.), and the API service maintains all build state in Postgres.
-- `builder-agent` uploads built artifacts to the custom authenticated registry deployed at `https://registry-brody.runpod.dev`. I'm using [`distribution/distribution`](https://github.com/distribution/distribution) for the registry, and I rolled my own auth (mostly just to learn how registry auth works).
+- logs are flushed back to the API every 250ms. For e.g. 64 microVM builders per task, that's 256 QPS to the API's `POST /logs` endpoint *per task*. With potentially thousands of tasks, this will likely have to be separately optimized (maybe redis? have to do some research on write path optimization)
+- `builder-agent` uploads built artifacts to the custom authenticated registry deployed at `https://registry-brody.runpod.dev`. I'm using [`distribution/distribution`](https://github.com/distribution/distribution) backed by Cloudflare R2 storage for the registry, and I rolled my own auth (mostly just to learn how registry auth works).
 - Full OAuth 2.0 all the way through the stack. The system speaks short-lived JWTs from top to bottom. Real RunPod user identities and scopes.
 - The scheduler service (not the builder-agent!) mints JWTs for the custom registry and passes them into the builder-agent when they are invoked. This includes a refresh token so the builder-agent can still authenticate if, for instance, a build takes too long and outlives the initial token TTL. The builder (which runs user-supplied code and may be subject to remote code execution vulnerabilities) can never mint credentials for other users.
 - Multi-tenant + isolated by default. User A cannot view/modify containers built by User B.
