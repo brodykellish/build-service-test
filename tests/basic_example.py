@@ -40,9 +40,9 @@ KEY = os.environ.get("RUNPOD_API_KEY")
 if not KEY:
     sys.exit("error: RUNPOD_API_KEY is not set")
 
-# Must match the marker in Dockerfile. Change both together.
+# Must match the marker in testdata/Dockerfile.basic. Change both together.
 GREETING = "HELLO_FROM_RUNPOD_BUILD_SERVICE"
-DOCKERFILE = Path(__file__).parent / "Dockerfile"
+DOCKERFILE = Path(__file__).parent.parent / "testdata" / "Dockerfile.basic"
 
 STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"example-{STAMP}"

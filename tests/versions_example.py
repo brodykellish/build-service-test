@@ -30,7 +30,7 @@ if not KEY:
 
 STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"versions-{STAMP}"
-DOCKERFILE = Path(__file__).parent / "Dockerfile.versions"
+DOCKERFILE = Path(__file__).parent.parent / "testdata" / "Dockerfile.versions"
 
 
 def submit_and_wait(c: httpx.Client, label: str, dockerfile: str) -> dict:

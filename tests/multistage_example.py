@@ -32,7 +32,7 @@ if not KEY:
 
 STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"multistage-{STAMP}"
-DOCKERFILE = Path(__file__).parent / "Dockerfile.multistage"
+DOCKERFILE = Path(__file__).parent.parent / "testdata" / "Dockerfile.multistage"
 
 
 def main() -> None:

@@ -45,9 +45,9 @@ if not KEY:
 STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"chained-{STAMP}"
 
-HERE = Path(__file__).parent
-DF_BASE = HERE / "Dockerfile.base"
-DF_CHILD = HERE / "Dockerfile.child"
+TESTDATA = Path(__file__).parent.parent / "testdata"
+DF_BASE = TESTDATA / "Dockerfile.base"
+DF_CHILD = TESTDATA / "Dockerfile.child"
 
 
 def stream_logs(c: httpx.Client, build_id: str) -> None:

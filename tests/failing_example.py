@@ -31,7 +31,7 @@ if not KEY:
 
 STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"failing-{STAMP}"
-DOCKERFILE = Path(__file__).parent / "Dockerfile.failing"
+DOCKERFILE = Path(__file__).parent.parent / "testdata" / "Dockerfile.failing"
 
 
 def main() -> None:
