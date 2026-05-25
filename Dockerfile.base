@@ -1,0 +1,14 @@
+# Base image for the chained example.
+# chained_example.py submits this verbatim as the source of build A. The
+# resulting image is pushed to the registry, and build B (Dockerfile.child)
+# references it as its FROM base — which is what makes the chained flow
+# exercise the registry's pull-during-build path.
+
+FROM alpine:3.20
+
+RUN echo "this is build A running on the remote builder"
+
+# A leaves behind a known marker that build B will read + extend.
+RUN echo "FROM_A: hello from build A" > /lineage.txt
+
+CMD ["cat", "/lineage.txt"]

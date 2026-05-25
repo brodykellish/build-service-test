@@ -1,10 +1,14 @@
-# RunPod Build Service — End-to-End Example
+# RunPod Build Service — End-to-End Examples
 
-A self-contained Python script that exercises the full container-build
-pipeline against the RunPod build service. If `python3 manual_e2e.py`
-exits 0, the pipeline works.
+Two self-contained Python scripts that exercise the RunPod build
+service end-to-end. If either exits 0, that flow works.
 
-What the script does, in order:
+| Script                | What it exercises                                                  |
+| --------------------- | ------------------------------------------------------------------ |
+| `manual_e2e.py`       | The basic flow: submit a build, stream logs, pull + run the image. |
+| `chained_example.py`  | Build A → build B where B's `FROM` is A's pushed image.            |
+
+What `manual_e2e.py` does, in order:
 
 1. Create a repository
 2. Create an image inside that repository
@@ -14,9 +18,20 @@ What the script does, in order:
 6. `docker pull` the resulting image
 7. Run the image locally and confirm its output matches the expected marker
 
-End-to-end, this hits every public surface of the build service plus
-both directions of the registry auth flow (push as the build, pull as
-your laptop).
+What `chained_example.py` adds on top:
+
+1. Build A from `Dockerfile.base` (a simple alpine layer)
+2. Build B from `Dockerfile.child`, where its `FROM` line is replaced with
+   A's just-pushed image URL — this triggers a registry pull from inside
+   the builder, which goes through registry-auth on the pull side
+3. `docker pull` + run B, verify the output shows both A's and B's markers
+   (proves the layers came through correctly)
+
+End-to-end, both scripts hit every public surface of the build service
+plus both directions of the registry auth flow (push as the build, pull
+as your laptop). `chained_example.py` additionally exercises the
+builder-side *pull* path (registry-auth grants a per-build pull token
+when one build's image is used as another build's base).
 
 ## Requirements
 
@@ -38,11 +53,12 @@ pip install -r requirements.txt
 
 ```bash
 export RUNPOD_API_KEY=rpa_...     # the key Brody sent you
-python3 manual_e2e.py
+python3 manual_e2e.py             # ~30–60 seconds
+python3 chained_example.py        # ~60–90 seconds (two builds back-to-back)
 ```
 
-Expected runtime: ~30–60 seconds. You should see the build logs scroll
-by in real time, then a `*** SUCCESS — full pipeline works ***` line.
+You should see build logs scroll by in real time and a
+`*** SUCCESS … ***` line at the end of each.
 
 ## Configuration
 
@@ -56,12 +72,19 @@ The script reads two optional environment variables:
 The defaults point at Brody's named development stage. If you've been
 given a different stage, override both — they need to match.
 
-## Customizing the Dockerfile
+## Customizing the Dockerfiles
 
-`./Dockerfile` is sent verbatim to the build service. Edit it freely.
-If you change the `HELLO_FROM_RUNPOD_BUILD_SERVICE` marker, also change
-the `GREETING` constant near the top of `manual_e2e.py`, otherwise the
-content-verification step in (7) will fail.
+`./Dockerfile` (used by `manual_e2e.py`) is sent verbatim to the build
+service. Edit it freely; if you change the `HELLO_FROM_RUNPOD_BUILD_SERVICE`
+marker, also change the `GREETING` constant near the top of `manual_e2e.py`
+so the content-verification step still passes.
+
+`./Dockerfile.base` and `./Dockerfile.child` (used by `chained_example.py`)
+are sent the same way, with one twist: `Dockerfile.child` contains the
+placeholder string `__BASE_IMAGE__`, which the script replaces with the
+pushed URL of build A's image before sending to the build service. If you
+edit `Dockerfile.child`, keep the `FROM __BASE_IMAGE__` line intact (or
+update the substitution in `chained_example.py`).
 
 ## Cleanup
 

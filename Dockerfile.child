@@ -1,0 +1,23 @@
+# Child image for the chained example.
+#
+# `__BASE_IMAGE__` is a placeholder that chained_example.py replaces with
+# the pushed URL of the base image (built from Dockerfile.base) before
+# sending this Dockerfile to the build service. The build service itself
+# does not process the placeholder — the substitution is purely a client-
+# side templating choice in chained_example.py.
+#
+# (Why templating and not Docker `ARG`? The public build API doesn't yet
+# accept build_args in the submission payload, so we render the
+# Dockerfile client-side instead.)
+
+FROM __BASE_IMAGE__
+
+RUN echo "this is build B running on top of A's image"
+
+# Read A's marker (proves the FROM pulled A's layers successfully) and
+# extend it with B's marker. The CMD below prints both, which is what
+# chained_example.py greps for in its verification step.
+RUN cat /lineage.txt && \
+    echo "FROM_B: hello from build B" >> /lineage.txt
+
+CMD ["cat", "/lineage.txt"]
