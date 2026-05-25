@@ -1,0 +1,11 @@
+# Intentionally-failing Dockerfile for the failure-path example.
+# The second RUN exits non-zero, which causes buildkit to abort the
+# build. failing_example.py asserts the build service correctly
+# transitions the build's status to "failed" and surfaces a
+# non-empty `failure_reason` diagnostic.
+
+FROM alpine:3.20
+
+RUN echo "build started — this RUN succeeds"
+RUN echo "this RUN is about to fail on purpose" && exit 1
+RUN echo "this line should never execute"

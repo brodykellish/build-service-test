@@ -3,10 +3,13 @@
 Two self-contained Python scripts that exercise the RunPod build
 service end-to-end. If either exits 0, that flow works.
 
-| Script                | What it exercises                                                  |
-| --------------------- | ------------------------------------------------------------------ |
-| `manual_e2e.py`       | The basic flow: submit a build, stream logs, pull + run the image. |
-| `chained_example.py`  | Build A → build B where B's `FROM` is A's pushed image.            |
+| Script                  | What it exercises                                                          |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `manual_e2e.py`         | The basic flow: submit a build, stream logs, pull + run the image.         |
+| `chained_example.py`    | Build A → build B where B's `FROM` is A's pushed image.                    |
+| `failing_example.py`    | A `RUN exit 1` Dockerfile — asserts the build is marked `failed` with a diagnostic, not stuck `running`. |
+| `multistage_example.py` | Multistage Dockerfile — asserts only `COPY --from=builder` content reaches the final image. |
+| `versions_example.py`   | Build the same image twice — asserts `next_version` advances and both URLs appear in `versions[]`. |
 
 What `manual_e2e.py` does, in order:
 
@@ -55,10 +58,15 @@ pip install -r requirements.txt
 export RUNPOD_API_KEY=rpa_...     # the key Brody sent you
 python3 manual_e2e.py             # ~30–60 seconds
 python3 chained_example.py        # ~60–90 seconds (two builds back-to-back)
+python3 failing_example.py        # ~30s — should print SUCCESS at the end
+                                  # even though the *build itself* fails (the
+                                  # script verifies the failure path works)
+python3 multistage_example.py     # ~30–60 seconds
+python3 versions_example.py       # ~60–90 seconds (two builds back-to-back)
 ```
 
 You should see build logs scroll by in real time and a
-`*** SUCCESS … ***` line at the end of each.
+`*** SUCCESS … ***` line at the end of each script.
 
 ## Configuration
 

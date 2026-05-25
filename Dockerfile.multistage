@@ -1,0 +1,27 @@
+# Multistage Dockerfile for the multistage-isolation example.
+#
+# The 'builder' stage produces two files: an artifact we want to keep
+# and an internal file we DO NOT want in the final image.
+# The final stage starts from a clean alpine and COPYs only the
+# artifact. multistage_example.py asserts the final image contains
+# the artifact but NOT the internal file.
+
+# --- Stage 1: builder -------------------------------------------------
+FROM alpine:3.20 AS builder
+
+RUN mkdir /workspace && \
+    echo "ARTIFACT_FROM_BUILDER_STAGE" > /workspace/output.txt && \
+    echo "BUILDER_STAGE_INTERNAL_FILE" > /workspace/internal.txt
+
+# --- Stage 2: final (minimal runtime) --------------------------------
+FROM alpine:3.20
+
+# Copy ONLY the artifact from the builder stage. The internal file
+# stays behind in the builder stage and is discarded.
+COPY --from=builder /workspace/output.txt /artifact.txt
+
+# Print the final image's relevant content so the test script can grep
+# it: list files at root (a leak would be visible), then cat the
+# artifact, then attempt to cat the internal file — it should NOT
+# exist in the final image, so cat will fail and we print a marker.
+CMD ["sh", "-c", "echo '--- files at /:'; ls -1 / | grep -E 'artifact|internal' || echo '(no matches)'; echo '--- artifact contents:'; cat /artifact.txt; echo '--- internal file:'; cat /internal.txt 2>/dev/null || echo 'internal-file-absent (good)'"]
