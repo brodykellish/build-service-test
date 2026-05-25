@@ -78,6 +78,7 @@ image on success. To inspect artifacts after a run, comment out the
 
 - Each build runs in an isolated task (the `builder-agent`), using BuildKit under the hood. Eventually, this should probably move to fully isolated Firecracker microVMs (fast cold-boot) that get spun up per-build.
 - Build jobs are queued + scheduled. A separate scheduler service assigns build jobs to available `builder-agent` tasks.
+- Currently, each `builder-agent` task can spawn at most 1 build subprocess at a time. We could do some horizontal scaling here (1 microVM builder per CPU core) so each `builer-agent` task actually manages it's own pool of builder slots.
 - Currently, the "builder fleet" is a single task — would obviously scale up, but it works as a "single-build-queue-consumer" PoC.
 - `builder-agent` writes back to the API (for e.g. streaming log chunks, build status updates, etc.), and the API service maintains all build state in Postgres.
 - `builder-agent` uploads built artifacts to the custom authenticated registry deployed at `https://registry-brody.runpod.dev`. I'm using [`distribution/distribution`](https://github.com/distribution/distribution) for the registry, and I rolled my own auth (mostly just to learn how registry auth works).
