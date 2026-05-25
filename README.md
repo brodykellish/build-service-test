@@ -22,31 +22,38 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Environment
+
+You need API keys for **two separate accounts**. Set both before running anything:
+
+```bash
+export RUNPOD_API_KEY=rpa_...      # account #1 — used by every script
+export RUNPOD_API_KEY_2=rpa_...    # account #2 — used only by isolation_example.py
+```
+
+`RUNPOD_API_KEY_2` MUST resolve to a different account than `RUNPOD_API_KEY`
+— `isolation_example.py` exits with an error if the two keys are equal.
+The other five scripts ignore `RUNPOD_API_KEY_2`.
+
+| Variable                | Default                              | Used by                              |
+| ----------------------- | ------------------------------------ | ------------------------------------ |
+| `RUNPOD_API_KEY`        | required                             | all six scripts                      |
+| `RUNPOD_API_KEY_2`      | required for isolation               | `isolation_example.py` only          |
+| `BUILD_SERVICE_API_URL` | `https://v2-rest-brody.runpod.dev`   | all six scripts                      |
+| `REGISTRY_HOST`         | `registry-brody.runpod.dev`          | all six scripts                      |
+
 ## Run
 
 ```bash
-export RUNPOD_API_KEY=rpa_...
 python3 tests/basic_example.py
 python3 tests/chained_example.py
 python3 tests/failing_example.py
 python3 tests/multistage_example.py
 python3 tests/versions_example.py
-
-# Isolation test needs a second account:
-export RUNPOD_API_KEY_2=rpa_...
 python3 tests/isolation_example.py
 ```
 
 Each script prints `*** SUCCESS … ***` and exits 0 when its flow works.
-
-## Configuration
-
-| Variable                | Default                              |
-| ----------------------- | ------------------------------------ |
-| `RUNPOD_API_KEY`        | required                             |
-| `RUNPOD_API_KEY_2`      | required by `isolation_example.py`; must be a separate account |
-| `BUILD_SERVICE_API_URL` | `https://v2-rest-brody.runpod.dev`   |
-| `REGISTRY_HOST`         | `registry-brody.runpod.dev`          |
 
 ## Layout
 
