@@ -26,6 +26,7 @@ Optional env overrides:
 from __future__ import annotations
 
 import os
+import platform
 import random
 import subprocess
 import sys
@@ -48,6 +49,26 @@ STAMP = f"{int(time.time())}-{random.randint(0, 0xFFFF):04x}"
 REPO = f"example-{STAMP}"
 IMAGE_NAME = "demo"
 
+
+def host_platform() -> str:
+    """Return the OCI platform string matching the local host architecture.
+
+    We use this to ask the build service to build for the SAME arch we're
+    going to docker-pull from — otherwise Apple Silicon Macs (arm64) get
+    a "no matching manifest" error when pulling a single-arch amd64 image.
+    Override via the TARGET_PLATFORM env var if you want a specific target
+    (e.g. TARGET_PLATFORM=linux/amd64 to test on Intel hosts via QEMU).
+    """
+    if override := os.environ.get("TARGET_PLATFORM"):
+        return override
+    machine = platform.machine().lower()
+    if machine in ("arm64", "aarch64"):
+        return "linux/arm64"
+    return "linux/amd64"
+
+
+PLATFORM = host_platform()
+
 client = httpx.Client(timeout=30.0, headers={"Authorization": f"Bearer {KEY}"})
 
 
@@ -66,14 +87,19 @@ def main() -> None:
         json={"name": IMAGE_NAME},
     ).raise_for_status()
 
-    print(f"\n[3] submitting build (Dockerfile = {DOCKERFILE.name})...")
+    print(f"\n[3] submitting build (Dockerfile = {DOCKERFILE.name}, platform = {PLATFORM})...")
     resp = client.post(
         f"{API_URL}/v2/repositories/{REPO}/images/{IMAGE_NAME}/builds",
         json={
             "source": {
                 "type": "inline",
                 "dockerfile_content": DOCKERFILE.read_text(),
-            }
+            },
+            # Build for the host arch so the docker pull/run in [6]/[7]
+            # finds a matching manifest. Multi-arch is supported (e.g.
+            # ["linux/amd64", "linux/arm64"]) but takes ~2-3x longer
+            # because the cross-arch leg runs under QEMU.
+            "platforms": [PLATFORM],
         },
     )
     resp.raise_for_status()
