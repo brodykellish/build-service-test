@@ -1,5 +1,13 @@
 # RunPod Build Service — Examples
 
+> **⚠️ DEPRECATED / RETIRED (2026-06-05).** The canonical end-to-end test
+> suite now lives in the `build-service` repo at `tests/e2e/` (a pytest suite
+> with a shared client lib, fixtures, and coverage for cancel/delete/logs/
+> chained/concurrent/isolation). These standalone scripts are superseded —
+> their unique scenarios (`chained`, `concurrent_builds`) were ported into
+> `build-service/tests/e2e/test_chained.py` and `test_concurrent.py`. Use that
+> suite; this repo is kept only for reference.
+
 End-to-end test scripts for the RunPod container build service. Each
 script exercises a different feature; if it exits 0, that flow works.
 
